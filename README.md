@@ -1,4 +1,4 @@
-# note-ediitor
+# note-editor
 Python GUI app for editing and viewing text files
 
     LOGIN/ REGISTRATION
