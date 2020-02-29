@@ -9,6 +9,9 @@ connection = mysql.connector.connect(host="localhost",user="root",password="",da
 dbcursor = connection.cursor()
 
 class User:
+    """
+        this class records the details of user which is currently active.
+    """
     def __init__(self,user_data=None):
         if user_data is None:
             self.UID = 1
@@ -25,9 +28,13 @@ class User:
         return f"({self.UID})"
 
 def home():
-    # global root
-    # global header
-    # global body
+    """
+        this function is the home page of the app
+        > resize the window and setup
+        > clear the root window
+        > add buttons for login and registration
+        > call the login_view_tab to show login window
+    """
     root.minsize(400,550)
     root.maxsize(400,550)
     header["height"] = 50
@@ -37,24 +44,34 @@ def home():
     body["height"] = 800
     body["width"] = 400
     body["bg"]= "#222"
+    
     for w in header.winfo_children():
         w.destroy()
     for w in body.winfo_children():
         w.destroy()
+    
     login_tab = Button(header,text="Login",font=("Arial",12,"bold"),width=20,height=2,bg="#666",bd=0,fg="#fff",command=lambda: login_tab_view(login_tab,register_tab))
     login_tab.pack(side=LEFT,pady=0,padx=0,ipady=0)
+
     register_tab = Button(header,text="Register",font=("Arial",12,"bold"),width=20,height=2,bg="#666",bd=0,fg="#fff",command=lambda: registration_tab_view(login_tab,register_tab))
     register_tab.pack(side=RIGHT,padx=1,pady=0)
-    # current_user = User()
-    # notepad(current_user)
+    
     login_tab_view(login_tab,register_tab)
 
 def notepad(current_user):
-    # global header
-    # global body
-    # global root
+    """
+         this window is after login:
+         > destroy the header frame which previously contained login and registration button
+         > destroy body
+         > resize window and few tweaks to the window
+         > fetch all the text files from the database associated with the user
+         > check if there is any files created and act accordingly
+         > if there are files associated with the user create a listbox to show it
+         > add create , open , delete and logout button
+    """
     for part in header.winfo_children():
-            part.destroy()
+        part.destroy()
+    
     for part in body.winfo_children():
         part.destroy()
     print(current_user)
@@ -90,12 +107,19 @@ def notepad(current_user):
         open_file.pack(side=LEFT,pady=7,ipady=5,ipadx=5,padx=150)
         delete_file = Button(body,text = "DELETE",font=("Arial",12,"bold"),width=10,height = 1, bg = "#224",fg = "#fff",command = lambda: delete_data(doclist.get(ANCHOR),current_user))
         delete_file.pack(side=LEFT,pady=7,ipady=5,ipadx=5,padx=150)
-    except NameError:
+    except:
         messagebox.showinfo("Alert","you have no file to open!!!")
     logout_button = Button(body,text = "LOGOUT",font=("Arial",12,"bold"),width=10,height = 1, bg = "#224",fg = "#fff",command = home)
     logout_button.pack(side=LEFT,pady=10,ipady=7,ipadx=5,padx=110)
 
 def delete_data(filename,current_user):
+    """
+        this function takes in two arguments current user and filename to be deleted.
+        > check if there is something selected or just a prank
+        > if there is then delete the filename from notes table in the database
+        > then use shutil to move the file from 'notes' folder to 'deleted' folder == because we dont lose data.
+    """
+
     if filename is not None and current_user is not None:
         try:
             dbcursor.execute(f"DELETE FROM notes WHERE filename = '{filename}' AND UID = '{current_user.UID}'")
@@ -112,6 +136,16 @@ def delete_data(filename,current_user):
     notepad(current_user)
 
 def create_new_file_window(current_user):
+
+    """
+        this window creates a new file in the user system
+        > ask for the filename through a dialog box
+        > handle errors accordingly
+        > on valid name entry check whether the filename already exists
+        > create a filename in the notes table and 'filename'.txt file in the 'notes directory'
+        > redirect to editor for document edit
+    """
+
     # messagebox.()
     filename = simpledialog.askstring("New File","Enter new file name \n(NOTE: all files are by default .txt. Thankyou!)")
     print(filename)
@@ -123,7 +157,7 @@ def create_new_file_window(current_user):
         pass
     else:
         if filename.isalnum():
-            dbcursor.execute(f"SELECT * FROM notes WHERE filename = '{filename}' AND UID = '{current_user.UID}'")
+            dbcursor.execute(f"SELECT * FROM notes WHERE filename = '{filename}'")# AND UID = '{current_user.UID}'")
             if dbcursor.fetchone():
                 messagebox.showinfo("Alert","File already exists!!!")
                 create_new_file_window(current_user)
@@ -143,9 +177,14 @@ def create_new_file_window(current_user):
             create_new_file_window(current_user)
 
 def note_editor(filename,current_user):
-
-    # global body
-    # global header
+    """
+        this is the editor window 
+        > check whether the file name is correct or not
+        > on correct:
+            > open the file from the system
+            > get the text from the file and insert it into the text box for editing
+        > this window has three button SAVE (save the current changes), RESTORE(restore doc to last saved checkpoint) and CANCEL(open the notepad menu)
+    """
     print("note-editor")
     if filename == "" or filename == None:
         messagebox.showinfo("Error","No file Chosen!!!")
@@ -185,18 +224,28 @@ def note_editor(filename,current_user):
             home_button.pack(side=LEFT,pady=7,ipady=7,ipadx=5,padx=10)
 
 def editor_restore(filename,current_user):
+    """
+        this restore the data by simply reloading the file
+    """
     note_editor(filename[:-4],current_user)
 
 def editor_save(content,filename,current_user):
+    """
+        This methos the saves the changes bydirectly writing the contents from text box to the text file in the system ROM.
+    """
     open(os.path.join(os.getcwd(),"notes",filename),"w").write(content)
     note_editor(filename[:-4],current_user)
     # pass
     
 
 def notehome(email=None,password=None):
-    # global dbcursor
+    """
+    this method check if the user really exists.
+    if true then redirect to notepad
+    else show error message to the user
+    """
     print("Arrived!!!")
-    print(email," ",password)
+    # print(email," ",password)
     dbcursor.execute("SELECT * from users WHERE email = '{}' AND passwd = '{}' ;".format(email,password))
     user_data = dbcursor.fetchone()
     if user_data:
@@ -206,9 +255,11 @@ def notehome(email=None,password=None):
         messagebox.showinfo("Alert","No such user exists!!!")
 
 def login_tab_view(login_tab,register_tab):
-    # global root
-    # global body
-    # global header
+    """
+    this is the login view method contains all the definition for body of the login window
+    > has two entry  for email and password
+    > one login button to login which call the notehome function credentials verifications.
+    """
     root.title("Login")
     login_tab["bg"] = body["bg"]
     register_tab["bg"] = "#666"
@@ -228,6 +279,11 @@ def login_tab_view(login_tab,register_tab):
     log_me_in.pack(side=TOP,padx=80,pady=(30,200),ipady=5)
 
 def register(username,email,password):
+    """
+    this functions validates the user registration data.
+    valid users are registered into the database
+    and directly redirect to notepad
+    """
     if " " in  username or " " in email:
         messagebox.showinfo("Warning","spaces are not allowed in username and email")
 
@@ -244,6 +300,11 @@ def register(username,email,password):
 
 
 def registration_tab_view(login_tab,register_tab):
+    """
+        this is the registration window. it contains:
+        > 3 entry objects for : username, email, password
+        > registration button which directly calls the register methods for credentials validations
+    """
     global root
     global body
     global header
